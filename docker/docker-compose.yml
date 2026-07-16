@@ -1,0 +1,73 @@
+services:
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - openwebui
+      - livezilla
+    networks:
+      - webnet
+
+  livezilla:
+    image: livezilla-custom
+    volumes:
+      - livezilla_data:/var/www/html
+    depends_on:
+      - mysql
+    networks:
+      - webnet
+
+  openwebui:
+    image: openwebui/open-webui:latest
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - VECTOR_DB=qdrant
+      - QDRANT_URI=http://qdrant:6333
+    depends_on:
+      - ollama
+      - qdrant
+    networks:
+      - webnet
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_models:/root/.ollama/models
+    networks:
+      - webnet
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - webnet
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=livezilla
+      - MYSQL_USER=livezilla
+      - MYSQL_PASSWORD=${DB_USER_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - webnet
+
+volumes:
+  livezilla_data:
+  qdrant_data:
+  ollama_models:
+  mysql_data:
+
+networks:
+  webnet:
+    driver: bridge
