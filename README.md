@@ -106,15 +106,69 @@ Automatisiertes Backup-Skript (täglich via Cron):
 `Docker` `Docker Compose` `Nginx` `Ollama` `Llama 3` `Qdrant` `Open WebUI`
 `MySQL` `PHP` `Ubuntu Server 24.04 LTS` `UFW` `SSH`
 
+## 🐳 Docker-Setup
+
+Die komplette Infrastruktur wird über eine einzige `docker-compose.yml` verwaltet.
+Zugangsdaten werden nicht im Klartext hinterlegt, sondern über Umgebungsvariablen
+(`.env`-Datei) eingebunden.
+
+**[→ docker-compose.yml ansehen](docker/docker-compose.yml)**
+**[→ Dockerfile-livezilla ansehen](docker/Dockerfile-livezilla)**
+
+```yaml
+services:
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - openwebui
+      - livezilla
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=livezilla
+      - MYSQL_USER=livezilla
+      - MYSQL_PASSWORD=${DB_USER_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+# vollständige Version inkl. Ollama, Qdrant, Open WebUI, LiveZilla
+# und Netzwerk-Konfiguration siehe docker/docker-compose.yml
+```
+
+LiveZilla benötigt PHP 7.4 mit GD- und MySQLi-Erweiterung, die im
+offiziellen PHP-Image fehlen – dafür ein eigenes Image:
+
+```dockerfile
+FROM php:7.4-apache
+
+RUN apt-get update && apt-get install -y \
+    libpng-dev libjpeg-dev libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd mysqli
+
+EXPOSE 80
+```
+
+**Setup:**
+```bash
+git clone <repo-url>
+cd docker
+cp .env.example .env   
+docker compose up -d
+```
+
 
 ## 📁 Repo-Struktur
 
-```
-docker/           → docker-compose.yml, Dockerfile (bereinigt)
-diagrams/         → Architektur- & Netzwerkdiagramme
-screenshots/      → Screenshots der Durchführung
-README.md         → Diese Übersicht
-```
+- [`diagrams/`](diagrams/) → Architektur- & Netzwerkdiagramme
+- [`docker/`](docker/) → docker-compose.yml, Dockerfile, .env.example (bereinigt)
+- [`screenshots/`](screenshots/) → Screenshots der Durchführung
+- [`README.md`](README.md) → Diese Übersicht
 
 ---
 
