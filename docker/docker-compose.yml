@@ -31,6 +31,8 @@ services:
       - OLLAMA_BASE_URL=http://ollama:11434
       - VECTOR_DB=qdrant
       - QDRANT_URI=http://qdrant:6333
+    volumes:
+      - openwebui_data:/app/backend/data
     depends_on:
       - ollama
       - qdrant
@@ -68,6 +70,7 @@ services:
 
 volumes:
   livezilla_data:
+  openwebui_data:
   qdrant_data:
   ollama_models:
   mysql_data:
