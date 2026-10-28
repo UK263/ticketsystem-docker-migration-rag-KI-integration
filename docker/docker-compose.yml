@@ -15,6 +15,9 @@ services:
 
   livezilla:
     image: livezilla-custom
+    build:
+      context: .
+      dockerfile: Dockerfile-livezilla
     volumes:
       - livezilla_data:/var/www/html
     depends_on:
