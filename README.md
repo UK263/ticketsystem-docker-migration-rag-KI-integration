@@ -1,177 +1,141 @@
-# 🎫 Ticketsystem-Migration mit KI-gestützter Wissensbasis (RAG)
+# Ticketsystem-Migration mit lokaler KI-Wissensbasis (RAG)
 
-Migration eines cloudbasierten Ticketsystems auf eine lokale, containerisierte
-Infrastruktur – ergänzt durch ein KI-gestütztes Wissensmanagementsystem auf
-Basis von Retrieval Augmented Generation (RAG).
+Ein Support-Team hat sein Ticket- und Livechat-System LiveZilla bei einem Cloud-Anbieter betrieben. Ziel war, es auf einen eigenen Server im Firmennetz zu holen. Dazu kommt ein lokales Sprachmodell über Ollama und Open WebUI, das mit Qdrant auf Support-Dokumente zugreifen kann (RAG). Die Daten bleiben damit im eigenen Netz.
 
-> IHK-Abschlussprojekt | Fachinformatiker für Systemintegration (2026)
+## Herkunft
 
-## 📌 Ausgangslage
+Die Migration war mein IHK-Abschlussprojekt als Fachinformatiker für Systemintegration. Umgesetzt habe ich sie in meinem Praktikum von September 2025 bis Ende März 2026. Dabei habe ich LiveZilla auf dem lokalen Server installiert und die Daten aus der Cloud migriert. Einiges war vom Betrieb vorgegeben.
 
-Ein mittelständisches Unternehmen aus dem Bereich Sicherheitstechnik betrieb
-sein Kunden-Support-Ticketsystem (LiveZilla) auf einem externen Cloud-Server.
-Das führte zu mehreren Problemen:
 
-- Volle Abhängigkeit vom Cloud-Anbieter, keine Kontrolle über Infrastruktur
-- Kein Backup-/Recovery-Konzept
-- Support-Wissen verteilt auf Handbücher, alte Tickets und PDFs — keine
-  zentrale Wissensdatenbank
-- Datenschutzrechtliche Fragen durch externe Datenverarbeitung (DSGVO/AVV)
+Dieses Repo ist ein späterer Nachbau anhand meiner IHK-Projektdokumentation. Firmenname, Zugangsdaten und interne Daten sind entfernt oder anonymisiert, auch in den Bildern.
 
-## 🎯 Ziel des Projekts
+Den Nachbau habe ich mit KI-Unterstützung umgesetzt. Architektur, Review und Betrieb kommen von mir.
 
-- Migration des Ticketsystems auf einen lokalen, selbst verwalteten Server
-- Aufbau einer lokalen KI-Wissensplattform (RAG) zur Unterstützung des Supports
-- Verschlüsselte Erreichbarkeit aller Dienste (HTTPS)
-- Automatisierte Backup-Strategie nach dem 3-2-1-Prinzip
+## Architektur
 
-## 🏗️ Architektur
+Alle Dienste laufen mit Docker Compose in einem gemeinsamen Bridge-Netzwerk (`webnet`). Die Dienste sprechen sich über ihre Service-Namen an.
 
-Alle Dienste laufen containerisiert über Docker Compose in einem gemeinsamen
-Bridge-Netzwerk. Nach außen ist ausschließlich der Reverse Proxy erreichbar –
-alle anderen Dienste kommunizieren ausschließlich intern über Docker-Hostnamen.
+| Dienst | Image | Aufgabe | Port auf dem Host |
+|---|---|---|---|
+| `nginx` | `nginx:stable-alpine` | Reverse Proxy für Open WebUI und LiveZilla | `80`, `443` (alle Interfaces) |
+| `livezilla` | eigenes Image aus `Dockerfile-livezilla` (PHP 7.4 + Apache) | Ticketsystem und Livechat | keiner |
+| `mysql` | `mysql:8.0` | Datenbank für LiveZilla | keiner |
+| `openwebui` | `ghcr.io/open-webui/open-webui:main` | Chat-Oberfläche und RAG | keiner |
+| `ollama` | `ollama/ollama:latest` | Laufzeit für das lokale LLM | keiner |
+| `qdrant` | `qdrant/qdrant:latest` | Vektordatenbank für die Dokumente | `127.0.0.1:6333` (nur lokal) |
+
+Wer mit wem spricht:
+
+- `nginx` leitet Anfragen an `openwebui` und `livezilla` weiter.
+- `livezilla` speichert seine Daten in `mysql`.
+- `openwebui` nutzt `ollama` über `http://ollama:11434` und `qdrant` über `http://qdrant:6333`.
+
+Von außen erreichbar ist nur nginx auf Port 80 und 443. Qdrant ist zusätzlich an `127.0.0.1:6333` gebunden, damit man auf dem Server selbst darauf zugreifen kann. Alle anderen Dienste haben keine Portfreigabe und sind nur im Docker-Netzwerk erreichbar.
+
+```mermaid
+flowchart LR
+    Client[Browser] -->|80 / 443| nginx
+    subgraph webnet [Docker-Netzwerk webnet]
+        nginx --> openwebui
+        nginx --> livezilla
+        livezilla --> mysql
+        openwebui -->|ollama:11434| ollama
+        openwebui -->|qdrant:6333| qdrant
+    end
+    Host[Server selbst] -->|127.0.0.1:6333| qdrant
+```
+
+Persistente Volumes: `livezilla_data`, `mysql_data`, `openwebui_data`, `ollama_models`, `qdrant_data`.
+
+Diagramme aus dem Praktikum (anonymisiert). Sie zeigen den Stand von damals: Netzwerk `projekt_default`, 4 Volumes, Open WebUI mit `:latest` und Qdrant auf Port 6333 offen. Die compose in diesem Repo weicht davon ab, siehe Tabelle oben.
 
 ![Docker-Architektur](diagrams/docker-architektur.png)
 ![Netzwerk-Topologie](diagrams/netzwerk-topologie.png)
 ![Client-Server-Routing](diagrams/client-server-routing.png)
 
-**Komponenten:**
+## RAG mit Open WebUI
 
-| Dienst | Rolle |
-|---|---|
-| **Nginx** | Reverse Proxy, TLS-Terminierung (TLS 1.2/1.3), einziger extern erreichbarer Dienst |
-| **LiveZilla** (PHP 7.4, Custom Image) | Ticketsystem, läuft mit MySQL-Backend |
-| **MySQL 8.0** | Relationale Datenbank für LiveZilla |
-| **Ollama** | Lokale LLM-Runtime (Llama 3) |
-| **Open WebUI** | Chat-Oberfläche mit nativer RAG-Anbindung |
-| **Qdrant** | Vektordatenbank für semantische Suche (Embeddings) |
+Open WebUI ist über `VECTOR_DB=qdrant` so eingestellt, dass hochgeladene Dokumente in Qdrant landen. Bei einer Frage sucht Open WebUI passende Textstellen und gibt sie zusammen mit der Frage an das Modell in Ollama. Ein Embedding-Modell ist in der compose nicht festgelegt, Open WebUI nutzt dann seinen Standard.
 
-**Warum Container statt VMs?** Geringerer Ressourcenbedarf, zentrale
-Konfiguration über eine einzige `docker-compose.yml`, hohe Reproduzierbarkeit
-(gesamtes System auf neuem Host mit einem Befehl aufsetzbar).
+## Setup
 
-## 🤖 Funktionsweise der KI-Wissensbasis (RAG)
+Voraussetzung: ein Linux-Server mit Docker und dem Compose-Plugin.
 
-1. Support-relevante Dokumente (Ticket-Historie, Handbücher, technische Docs)
-   werden in Open WebUI hochgeladen
-2. Dokumente werden automatisch in Chunks zerlegt und über
-   `sentence-transformers/all-MiniLM-L6-v2` vektorisiert
-3. Vektoren werden in Qdrant gespeichert
-4. Bei einer Support-Anfrage wird die Frage ebenfalls vektorisiert, relevante
-   Textabschnitte werden abgerufen und zusammen mit der Frage an Llama 3
-   übergeben
-5. Llama 3 generiert eine kontextbasierte, fertig formulierte Antwort
+```bash
+git clone https://github.com/UK263/ticketsystem-docker-migration-rag-KI-integration.git
+cd ticketsystem-docker-migration-rag-KI-integration/docker
+cp .env.example .env
+```
 
-Ergebnis: Bearbeitungszeit pro Ticket sank in der internen Testphase von
-durchschnittlich 25 Minuten auf 3–5 Minuten.
+In `docker/.env` die beiden Passwörter `DB_ROOT_PASSWORD` und `DB_USER_PASSWORD` setzen. Die `.env` steht in der `.gitignore` und wird nicht committet.
 
-## 🔒 Sicherheitskonzept
+Bevor nginx etwas ausliefert, braucht es eine eigene Konfiguration und Zertifikate (siehe "Was fehlt"):
 
-- UFW-Firewall: nur Ports 22 (SSH), 80, 443 offen
-- SSH ausschließlich per Key-Authentifizierung, Root-Login deaktiviert
-- Alle internen Dienste (MySQL, Ollama, Qdrant) nicht von außen erreichbar
-- TLS 1.2/1.3 über Nginx, veraltete Protokolle deaktiviert
-- Nginx-Konfigurationsverzeichnisse read-only gemountet
-- Backups verschlüsselt (AES-256) auf externem Speicherort
+- `docker/nginx/conf.d/` für die Server-Blöcke. Open WebUI hört im Container auf Port `8080`, LiveZilla auf Port `80`.
+- `docker/nginx/ssl/` für Zertifikat und Schlüssel.
 
-## 💾 Backup-Strategie (3-2-1)
+Dann alles bauen und starten, weiterhin im Ordner `docker/`:
 
-Automatisiertes Backup-Skript (täglich via Cron):
-- MySQL-Dump (`mysqldump --single-transaction`)
-- Docker-Volumes (Qdrant, Open WebUI, Ollama) über temporäre Alpine-Container
-- Konfigurationsdateien (docker-compose.yml, Nginx-Config)
-- 3 Kopien: lokale Platte, NAS (SMB), externer Server (GPG-verschlüsselt)
-- Automatische Löschung von Backups älter als 30 Tage
-- Restore erfolgreich getestet (vollständige Wiederherstellung aller Tabellen)
+```bash
+docker compose up -d --build
+docker compose ps
+```
 
-## 📊 Ergebnis
+Modell in Ollama laden, zum Beispiel Llama 3:
+
+```bash
+docker compose exec ollama ollama pull llama3
+```
+
+Danach ist das Modell in Open WebUI auswählbar.
+
+LiveZilla selbst ist nicht im Image. Die Programmdateien müssen in das Volume `livezilla_data` kopiert werden, zum Beispiel:
+
+```bash
+docker compose cp ./livezilla/. livezilla:/var/www/html/
+```
+
+Im LiveZilla-Installer als Datenbank eintragen: Host `mysql`, Datenbank `livezilla`, Benutzer `livezilla`, Passwort aus `DB_USER_PASSWORD`.
+
+## Was fehlt und Grenzen
+
+- Die nginx-Konfiguration (`docker/nginx/conf.d`) und die Zertifikate (`docker/nginx/ssl`) liegen nicht im Repo. Ohne sie startet nginx zwar, leitet aber nichts weiter.
+- Der LiveZilla-Quellcode ist nicht enthalten. LiveZilla ist kommerziell und wird seit 2020 nicht mehr weiterentwickelt. Man braucht eine eigene Kopie mit Lizenz.
+- LiveZilla braucht PHP 7.4. Diese Version bekommt seit Ende 2022 keine Sicherheitsupdates mehr. Der Container sollte deshalb nicht direkt aus dem Internet erreichbar sein, und langfristig gehört ein Ersatz für LiveZilla auf die Liste.
+- `ollama/ollama:latest`, `qdrant/qdrant:latest` und `open-webui:main` sind nicht auf eine Version festgelegt. Ein neuer Pull kann sich anders verhalten als beim Aufbau.
+- Für Ollama ist keine GPU eingebunden. Das Modell läuft auf der CPU.
+- Firewall (UFW), SSH-Härtung und das Backup-Skript mit Cron liefen im Praktikum auf dem Server. Sie sind nicht Teil dieses Repos.
+
+## Ergebnisse im Praktikum
+
+Diese Werte stehen in meiner IHK-Projektdokumentation. Die Doku ist nicht öffentlich, und mit diesem Repo lassen sich die Werte nicht reproduzieren.
 
 | Kriterium | Ergebnis |
 |---|---|
 | Datenmigration | 100 % (alle Tabellen vollständig migriert) |
-| Verschlüsselung | Durchgängig TLS 1.3 |
-| Reduktion Bearbeitungszeit pro Ticket | ca. 60–80 % |
-| Backup-Automatisierung | Täglich, Restore getestet |
+| Bearbeitungszeit pro Ticket (interne Testphase) | von durchschnittlich 25 Minuten auf 3–5 Minuten |
+| Backup | täglich per Cron, Restore getestet |
 | Tests bestanden | 12 / 12 |
 
-## 🖼️ Screenshots
+
+## Screenshots aus dem Praktikum
+
+Die Screenshots sind geschwärzt (Hostname, Benutzer, IP, Passwort, Browser-Tabs, Betriebszahlen). `docker ps` zeigt noch den alten Stand mit Qdrant auf `0.0.0.0:6333`.
 
 | | |
 |---|---|
-| ![Docker Status](screenshots/docker-ps.png) Container-Status | ![Nginx Test](screenshots/nginx-test.png) Nginx-Konfigurationstest |
-| ![Open WebUI](screenshots/openwebui.png) Open WebUI mit Llama 3 | ![Backup Test](screenshots/backup-restore-test.png) Backup & Restore |
+| ![Container-Status](screenshots/docker-ps.png) `docker ps` | ![Nginx-Test](screenshots/nginx-test.png) `nginx -t` |
+| ![Open WebUI](screenshots/openwebui.png) Open WebUI | ![Backup und Restore](screenshots/backup-restore-test.png) Backup- und Restore-Test |
 
-## 🛠️ Tech Stack
+## Was ich dabei gelernt habe
 
-`Docker` `Docker Compose` `Nginx` `Ollama` `Llama 3` `Qdrant` `Open WebUI`
-`MySQL` `PHP` `Ubuntu Server 24.04 LTS` `UFW` `SSH`
-
-## 🐳 Docker-Setup
-
-Die komplette Infrastruktur wird über eine einzige `docker-compose.yml` verwaltet.
-Zugangsdaten werden nicht im Klartext hinterlegt, sondern über Umgebungsvariablen
-(`.env`-Datei) eingebunden.
-
-**[→ docker-compose.yml ansehen](docker/docker-compose.yml)**
-**[→ Dockerfile-livezilla ansehen](docker/Dockerfile-livezilla)**
-
-```yaml
-services:
-  nginx:
-    image: nginx:stable-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - openwebui
-      - livezilla
-
-  mysql:
-    image: mysql:8.0
-    environment:
-      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
-      - MYSQL_DATABASE=livezilla
-      - MYSQL_USER=livezilla
-      - MYSQL_PASSWORD=${DB_USER_PASSWORD}
-    volumes:
-      - mysql_data:/var/lib/mysql
-
-# vollständige Version inkl. Ollama, Qdrant, Open WebUI, LiveZilla
-# und Netzwerk-Konfiguration siehe docker/docker-compose.yml
-```
-
-LiveZilla benötigt PHP 7.4 mit GD- und MySQLi-Erweiterung, die im
-offiziellen PHP-Image fehlen – dafür ein eigenes Image:
-
-```dockerfile
-FROM php:7.4-apache
-
-RUN apt-get update && apt-get install -y \
-    libpng-dev libjpeg-dev libfreetype6-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd mysqli
-
-EXPOSE 80
-```
-
-**Setup:**
-```bash
-git clone <repo-url>
-cd docker
-cp .env.example .env   
-docker compose up -d
-```
+Am schwierigsten waren Probleme mit der Datenbank. Der LiveZilla-Installer hatte schon eigene Tabellen angelegt. Beim Einspielen des MySQL-Dumps aus der Cloud gab es deshalb Konflikte durch doppelte Einträge. Ich habe den Import dann mit `--force` laufen lassen, damit er bei diesen Fehlern nicht abbricht.
 
 
-## 📁 Repo-Struktur
+## Repo-Struktur
 
-- [`diagrams/`](diagrams/) → Architektur- & Netzwerkdiagramme
-- [`docker/`](docker/) → docker-compose.yml, Dockerfile, .env.example (bereinigt)
-- [`screenshots/`](screenshots/) → Screenshots der Durchführung
-- [`README.md`](README.md) → Diese Übersicht
-
----
-
-*Aus Datenschutzgründen wurden Firmenname sowie sämtliche Zugangsdaten,
-Passwörter und interne Geschäftszahlen aus diesem Repository entfernt bzw.
-anonymisiert.*
+- `docker/docker-compose.yml`: alle Dienste
+- `docker/Dockerfile-livezilla`: PHP 7.4 mit Apache, GD und MySQLi für LiveZilla
+- `docker/.env.example`: Vorlage für die Passwörter
+- `diagrams/`: Architektur- und Netzwerkdiagramme aus dem Praktikum, anonymisiert
+- `screenshots/`: Screenshots aus dem Praktikum, geschwärzt
