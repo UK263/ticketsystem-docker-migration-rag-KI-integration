@@ -6,7 +6,6 @@ Ein Support-Team hat sein Ticket- und Livechat-System LiveZilla bei einem Cloud-
 
 Die Migration war mein IHK-Abschlussprojekt als Fachinformatiker für Systemintegration. Umgesetzt habe ich sie in meinem Praktikum von September 2025 bis Ende März 2026. Dabei habe ich LiveZilla auf dem lokalen Server installiert und die Daten aus der Cloud migriert. Einiges war vom Betrieb vorgegeben.
 
-
 Dieses Repo ist ein späterer Nachbau anhand meiner IHK-Projektdokumentation. Firmenname, Zugangsdaten und interne Daten sind entfernt oder anonymisiert, auch in den Bildern.
 
 Den Nachbau habe ich mit KI-Unterstützung umgesetzt. Architektur, Review und Betrieb kommen von mir.
@@ -81,6 +80,8 @@ docker compose up -d --build
 docker compose ps
 ```
 
+LiveZilla startet erst, wenn der Healthcheck von MySQL (`mysqladmin ping`) erfolgreich war.
+
 Modell in Ollama laden, zum Beispiel Llama 3:
 
 ```bash
@@ -117,7 +118,6 @@ Diese Werte stehen in meiner IHK-Projektdokumentation. Die Doku ist nicht öffen
 | Backup | täglich per Cron, Restore getestet |
 | Tests bestanden | 12 / 12 |
 
-
 ## Screenshots aus dem Praktikum
 
 Die Screenshots sind geschwärzt (Hostname, Benutzer, IP, Passwort, Browser-Tabs, Betriebszahlen). `docker ps` zeigt noch den alten Stand mit Qdrant auf `0.0.0.0:6333`.
@@ -130,7 +130,6 @@ Die Screenshots sind geschwärzt (Hostname, Benutzer, IP, Passwort, Browser-Tabs
 ## Was ich dabei gelernt habe
 
 Am schwierigsten waren Probleme mit der Datenbank. Der LiveZilla-Installer hatte schon eigene Tabellen angelegt. Beim Einspielen des MySQL-Dumps aus der Cloud gab es deshalb Konflikte durch doppelte Einträge. Ich habe den Import dann mit `--force` laufen lassen, damit er bei diesen Fehlern nicht abbricht.
-
 
 ## Repo-Struktur
 
