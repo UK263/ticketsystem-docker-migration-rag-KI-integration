@@ -68,10 +68,21 @@ cp .env.example .env
 
 In `docker/.env` die beiden Passwörter `DB_ROOT_PASSWORD` und `DB_USER_PASSWORD` setzen. Die `.env` steht in der `.gitignore` und wird nicht committet.
 
-Bevor nginx etwas ausliefert, braucht es eine eigene Konfiguration und Zertifikate (siehe "Was fehlt"):
+Nginx braucht noch eine Konfiguration und ein Zertifikat. Weiterhin im Ordner `docker/`:
 
-- `docker/nginx/conf.d/` für die Server-Blöcke. Open WebUI hört im Container auf Port `8080`, LiveZilla auf Port `80`.
-- `docker/nginx/ssl/` für Zertifikat und Schlüssel.
+```bash
+cp nginx/conf.d/default.conf.example nginx/conf.d/default.conf
+mkdir -p nginx/ssl
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout nginx/ssl/key.pem \
+  -out nginx/ssl/cert.pem \
+  -subj "/CN=example.local" \
+  -addext "subjectAltName=DNS:chat.example.local,DNS:support.example.local"
+```
+
+Anfragen auf Port 80 leitet die Vorlage auf HTTPS um. `chat.example.local` geht an Open WebUI (Port 8080 im Container), `support.example.local` an LiveZilla (Port 80 im Container). `cert.pem` und `key.pem` liegen im Container unter `/etc/nginx/ssl`, weil Compose den Ordner `./nginx/ssl` dorthin mountet.
+
+Das Zertifikat ist selbst signiert und nur für einen Test oder das LAN gedacht. Der Browser warnt dabei. `default.conf` und `docker/nginx/ssl/` stehen in der `.gitignore`. Die beiden Namen müssen vom Rechner aus auflösbar sein, zum Beispiel über die hosts-Datei.
 
 Dann alles bauen und starten, weiterhin im Ordner `docker/`:
 
@@ -100,7 +111,7 @@ Im LiveZilla-Installer als Datenbank eintragen: Host `mysql`, Datenbank `livezil
 
 ## Was fehlt und Grenzen
 
-- Die nginx-Konfiguration (`docker/nginx/conf.d`) und die Zertifikate (`docker/nginx/ssl`) liegen nicht im Repo. Ohne sie startet nginx zwar, leitet aber nichts weiter.
+- `docker/nginx/conf.d/default.conf` und die Zertifikate unter `docker/nginx/ssl/` legt man lokal an, siehe Setup. Beides steht in der `.gitignore`. Ohne die kopierte `default.conf` lädt nginx daraus keinen Server-Block. Fehlen `cert.pem` oder `key.pem`, bricht der Start ab.
 - Der LiveZilla-Quellcode ist nicht enthalten. LiveZilla ist kommerziell und wird seit 2020 nicht mehr weiterentwickelt. Man braucht eine eigene Kopie mit Lizenz.
 - LiveZilla braucht PHP 7.4. Diese Version bekommt seit Ende 2022 keine Sicherheitsupdates mehr. Der Container sollte deshalb nicht direkt aus dem Internet erreichbar sein, und langfristig gehört ein Ersatz für LiveZilla auf die Liste.
 - `ollama/ollama:latest`, `qdrant/qdrant:latest` und `open-webui:main` sind nicht auf eine Version festgelegt. Ein neuer Pull kann sich anders verhalten als beim Aufbau.
@@ -135,6 +146,7 @@ Am schwierigsten waren Probleme mit der Datenbank. Der LiveZilla-Installer hatte
 
 - `docker/docker-compose.yml`: alle Dienste
 - `docker/Dockerfile-livezilla`: PHP 7.4 mit Apache, GD und MySQLi für LiveZilla
+- `docker/nginx/conf.d/default.conf.example`: Vorlage für den Reverse Proxy
 - `docker/.env.example`: Vorlage für die Passwörter
 - `diagrams/`: Architektur- und Netzwerkdiagramme aus dem Praktikum, anonymisiert
 - `screenshots/`: Screenshots aus dem Praktikum, geschwärzt
