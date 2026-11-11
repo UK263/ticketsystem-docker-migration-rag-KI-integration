@@ -6,6 +6,9 @@
 # Zertifikate für nginx
 docker/nginx/ssl/
 
+# lokale Kopie der nginx-Vorlage
+docker/nginx/conf.d/default.conf
+
 # lokale Compose-Overrides
 docker-compose.override.yml
 
