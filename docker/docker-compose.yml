@@ -1,6 +1,6 @@
 services:
   nginx:
-    image: nginx:stable-alpine
+    image: nginx:1.30.6-alpine
     restart: unless-stopped
     ports:
       - "80:80"
@@ -29,7 +29,7 @@ services:
       - webnet
 
   openwebui:
-    image: ghcr.io/open-webui/open-webui:main
+    image: ghcr.io/open-webui/open-webui:v0.13.3
     restart: unless-stopped
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
@@ -44,7 +44,7 @@ services:
       - webnet
 
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.40.16
     restart: unless-stopped
     volumes:
       - ollama_models:/root/.ollama/models
@@ -52,7 +52,7 @@ services:
       - webnet
 
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:v1.20.0
     restart: unless-stopped
     ports:
       # Nur localhost: Docker-Portfreigaben umgehen UFW. Open WebUI nutzt qdrant:6333.
@@ -63,7 +63,7 @@ services:
       - webnet
 
   mysql:
-    image: mysql:8.0
+    image: mysql:8.0.46
     restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}

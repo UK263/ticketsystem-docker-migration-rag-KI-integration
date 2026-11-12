@@ -1,0 +1,5 @@
+# DL3008 will apt-Pakete auf eine Version festnageln. Im PHP-7.4-Image
+# liegen die Pakete auf einem alten Debian-Stand, den man hier nicht
+# sinnvoll pinnen kann.
+ignored:
+  - DL3008

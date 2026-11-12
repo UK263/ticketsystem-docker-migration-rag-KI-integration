@@ -1,8 +1,8 @@
-FROM php:7.4-apache
+FROM php:7.4.33-apache
 
 WORKDIR /var/www/html
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
