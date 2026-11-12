@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  compose:
+    name: Compose-Konfiguration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Compose-Datei prüfen
+        run: |
+          cp docker/.env.example docker/.env
+          docker compose -f docker/docker-compose.yml config -q
+
+  hadolint:
+    name: Hadolint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Dockerfiles prüfen
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile*
+          recursive: true
+          config: .hadolint.yaml
