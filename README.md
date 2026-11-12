@@ -16,12 +16,14 @@ Alle Dienste laufen mit Docker Compose in einem gemeinsamen Bridge-Netzwerk (`we
 
 | Dienst | Image | Aufgabe | Port auf dem Host |
 |---|---|---|---|
-| `nginx` | `nginx:stable-alpine` | Reverse Proxy für Open WebUI und LiveZilla | `80`, `443` (alle Interfaces) |
-| `livezilla` | eigenes Image aus `Dockerfile-livezilla` (PHP 7.4 + Apache) | Ticketsystem und Livechat | keiner |
-| `mysql` | `mysql:8.0` | Datenbank für LiveZilla | keiner |
-| `openwebui` | `ghcr.io/open-webui/open-webui:main` | Chat-Oberfläche und RAG | keiner |
-| `ollama` | `ollama/ollama:latest` | Laufzeit für das lokale LLM | keiner |
-| `qdrant` | `qdrant/qdrant:latest` | Vektordatenbank für die Dokumente | `127.0.0.1:6333` (nur lokal) |
+| `nginx` | `nginx:1.30.6-alpine` | Reverse Proxy für Open WebUI und LiveZilla | `80`, `443` (alle Interfaces) |
+| `livezilla` | eigenes Image aus `Dockerfile-livezilla` (`php:7.4.33-apache`) | Ticketsystem und Livechat | keiner |
+| `mysql` | `mysql:8.0.46` | Datenbank für LiveZilla | keiner |
+| `openwebui` | `ghcr.io/open-webui/open-webui:v0.13.3` | Chat-Oberfläche und RAG | keiner |
+| `ollama` | `ollama/ollama:0.40.16` | Laufzeit für das lokale LLM | keiner |
+| `qdrant` | `qdrant/qdrant:v1.20.0` | Vektordatenbank für die Dokumente | `127.0.0.1:6333` (nur lokal) |
+
+Die Image-Versionen sind gepinnt. Eine neuere Version trägt man als Tag in `docker/docker-compose.yml` oder `docker/Dockerfile-livezilla` ein und startet im Ordner `docker/` danach mit `docker compose up -d --build` neu.
 
 Wer mit wem spricht:
 
@@ -114,7 +116,6 @@ Im LiveZilla-Installer als Datenbank eintragen: Host `mysql`, Datenbank `livezil
 - `docker/nginx/conf.d/default.conf` und die Zertifikate unter `docker/nginx/ssl/` legt man lokal an, siehe Setup. Beides steht in der `.gitignore`. Ohne die kopierte `default.conf` lädt nginx daraus keinen Server-Block. Fehlen `cert.pem` oder `key.pem`, bricht der Start ab.
 - Der LiveZilla-Quellcode ist nicht enthalten. LiveZilla ist kommerziell und wird seit 2020 nicht mehr weiterentwickelt. Man braucht eine eigene Kopie mit Lizenz.
 - LiveZilla braucht PHP 7.4. Diese Version bekommt seit Ende 2022 keine Sicherheitsupdates mehr. Der Container sollte deshalb nicht direkt aus dem Internet erreichbar sein, und langfristig gehört ein Ersatz für LiveZilla auf die Liste.
-- `ollama/ollama:latest`, `qdrant/qdrant:latest` und `open-webui:main` sind nicht auf eine Version festgelegt. Ein neuer Pull kann sich anders verhalten als beim Aufbau.
 - Für Ollama ist keine GPU eingebunden. Das Modell läuft auf der CPU.
 - Firewall (UFW), SSH-Härtung und das Backup-Skript mit Cron liefen im Praktikum auf dem Server. Sie sind nicht Teil dieses Repos.
 
@@ -145,7 +146,7 @@ Am schwierigsten waren Probleme mit der Datenbank. Der LiveZilla-Installer hatte
 ## Repo-Struktur
 
 - `docker/docker-compose.yml`: alle Dienste
-- `docker/Dockerfile-livezilla`: PHP 7.4 mit Apache, GD und MySQLi für LiveZilla
+- `docker/Dockerfile-livezilla`: PHP 7.4.33 mit Apache, GD und MySQLi für LiveZilla
 - `docker/nginx/conf.d/default.conf.example`: Vorlage für den Reverse Proxy
 - `docker/.env.example`: Vorlage für die Passwörter
 - `diagrams/`: Architektur- und Netzwerkdiagramme aus dem Praktikum, anonymisiert
