@@ -151,3 +151,7 @@ Am schwierigsten waren Probleme mit der Datenbank. Der LiveZilla-Installer hatte
 - `docker/.env.example`: Vorlage für die Passwörter
 - `diagrams/`: Architektur- und Netzwerkdiagramme aus dem Praktikum, anonymisiert
 - `screenshots/`: Screenshots aus dem Praktikum, geschwärzt
+
+## Lizenz
+
+Das Repo steht unter der MIT-Lizenz, siehe [LICENSE](LICENSE).
