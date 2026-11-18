@@ -121,13 +121,13 @@ Im LiveZilla-Installer als Datenbank eintragen: Host `mysql`, Datenbank `livezil
 
 ## Ergebnisse im Praktikum
 
-Feste Zahlen dazu habe ich nicht gemessen.
+Gemessene Zahlen habe ich dazu nicht, deshalb beschreibe ich die Ergebnisse nur grob.
 
 | Kriterium | Ergebnis |
 |---|---|
-| Datenmigration | Die Daten aus der Cloud liegen auf dem lokalen Server. Ob jede Tabelle vollständig ankam, habe ich nicht geprüft. |
+| Datenmigration | Die Daten aus der Cloud liegen auf dem lokalen Server. Eine Prüfung Tabelle für Tabelle habe ich nicht dokumentiert. |
 | Bearbeitungszeit pro Ticket | Antworten auf Standardfragen gehen spürbar schneller, gemessen habe ich das nicht. |
-| Backup | täglich per Cron, Restore getestet |
+| Backup | täglich per Cron eingerichtet, einen Restore-Test habe ich nicht dokumentiert |
 | Tests | Wie viele Tests durchliefen, habe ich nicht aufgeschrieben. |
 
 ## Screenshots aus dem Praktikum
