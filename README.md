@@ -121,14 +121,14 @@ Im LiveZilla-Installer als Datenbank eintragen: Host `mysql`, Datenbank `livezil
 
 ## Ergebnisse im Praktikum
 
-Diese Werte stehen in meiner IHK-Projektdokumentation. Die Doku ist nicht öffentlich, und mit diesem Repo lassen sich die Werte nicht reproduzieren.
+Gemessene Zahlen habe ich dazu nicht, deshalb beschreibe ich die Ergebnisse nur grob.
 
 | Kriterium | Ergebnis |
 |---|---|
-| Datenmigration | 100 % (alle Tabellen vollständig migriert) |
-| Bearbeitungszeit pro Ticket (interne Testphase) | von durchschnittlich 25 Minuten auf 3–5 Minuten |
-| Backup | täglich per Cron, Restore getestet |
-| Tests bestanden | 12 / 12 |
+| Datenmigration | Die Daten aus der Cloud liegen auf dem lokalen Server. Eine Prüfung Tabelle für Tabelle habe ich nicht dokumentiert. |
+| Bearbeitungszeit pro Ticket | Antworten auf Standardfragen gehen spürbar schneller, gemessen habe ich das nicht. |
+| Backup | täglich per Cron eingerichtet, einen Restore-Test habe ich nicht dokumentiert |
+| Tests | Wie viele Tests durchliefen, habe ich nicht aufgeschrieben. |
 
 ## Screenshots aus dem Praktikum
 
