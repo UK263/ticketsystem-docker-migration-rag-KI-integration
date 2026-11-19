@@ -6,7 +6,7 @@ Ein Support-Team hat LiveZilla, das Ticket- und Livechat-System, bei einem Cloud
 
 Die Migration war mein IHK-Abschlussprojekt als Fachinformatiker für Systemintegration. Umgesetzt habe ich sie im Praktikum von September 2025 bis Ende März 2026. LiveZilla habe ich auf dem lokalen Server installiert und die Daten aus der Cloud migriert. Einiges war vom Betrieb vorgegeben.
 
-Im Praktikum umgesetzt, hier als anonymisierte Rekonstruktion. Grundlage ist meine IHK-Projektdokumentation. Der Nachbau ist später entstanden. Firmenname, Zugangsdaten und interne Daten sind entfernt oder anonymisiert, auch in den Bildern.
+Dieses Repo ist ein späterer Nachbau anhand meiner IHK-Projektdokumentation, also eine anonymisierte Rekonstruktion. Firmenname, Zugangsdaten und interne Daten sind entfernt oder anonymisiert, auch in den Bildern.
 
 Den Nachbau habe ich mit KI-Unterstützung umgesetzt. Architektur, Review und Betrieb kommen von mir.
 
@@ -113,8 +113,8 @@ Im LiveZilla-Installer als Datenbank eintragen: Host `mysql`, Datenbank `livezil
 
 ## Was fehlt und Grenzen
 
-- `docker/nginx/conf.d/default.conf` und die Zertifikate unter `docker/nginx/ssl/` lege ich lokal an, siehe Setup. Beides steht in der `.gitignore`. Ohne die kopierte `default.conf` lädt nginx daraus keinen Server-Block. Fehlen `cert.pem` oder `key.pem`, bricht der Start ab.
-- Der LiveZilla-Quellcode ist nicht enthalten. LiveZilla ist kommerziell und wird seit 2020 nicht mehr weiterentwickelt. Dafür brauche ich eine eigene Kopie mit Lizenz.
+- `docker/nginx/conf.d/default.conf` und die Zertifikate unter `docker/nginx/ssl/` legt man lokal an, siehe Setup. Beides steht in der `.gitignore`. Ohne die kopierte `default.conf` lädt nginx daraus keinen Server-Block. Fehlen `cert.pem` oder `key.pem`, bricht der Start ab.
+- Der LiveZilla-Quellcode ist nicht enthalten. LiveZilla ist kommerziell und wird seit 2020 nicht mehr weiterentwickelt. Wer es aufsetzen will, braucht eine eigene Kopie mit Lizenz.
 - LiveZilla braucht PHP 7.4. Diese Version bekommt seit Ende 2022 keine Sicherheitsupdates mehr. Der Container sollte deshalb nicht direkt aus dem Internet erreichbar sein. Langfristig gehört ein Ersatz für LiveZilla auf die Liste.
 - Für Ollama ist keine GPU eingebunden. Das Modell läuft auf der CPU.
 - Firewall (UFW), SSH-Härtung und das Backup-Skript mit Cron liefen im Praktikum auf dem Server. Sie sind nicht Teil dieses Repos.
@@ -127,7 +127,7 @@ Gemessene Zahlen habe ich dazu nicht. Die Ergebnisse beschreibe ich nur grob.
 |---|---|
 | Datenmigration | Die Daten aus der Cloud liegen auf dem lokalen Server. Eine Prüfung Tabelle für Tabelle habe ich nicht dokumentiert. |
 | Bearbeitungszeit pro Ticket | Antworten auf Standardfragen gehen spürbar schneller. Gemessen habe ich das nicht. |
-| Backup | täglich per Cron eingerichtet. Einen Restore-Test habe ich nicht dokumentiert. |
+| Backup | Täglich per Cron eingerichtet. Einen Restore-Test habe ich nicht dokumentiert. |
 | Tests | Wie viele Tests durchliefen, habe ich nicht aufgeschrieben. |
 
 ## Screenshots aus dem Praktikum
