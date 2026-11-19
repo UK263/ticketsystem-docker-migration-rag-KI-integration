@@ -8,7 +8,7 @@ Die Migration war mein IHK-Abschlussprojekt als Fachinformatiker für Systeminte
 
 Im Praktikum umgesetzt, hier als anonymisierte Rekonstruktion. Grundlage ist meine IHK-Projektdokumentation. Der Nachbau ist später entstanden. Firmenname, Zugangsdaten und interne Daten sind entfernt oder anonymisiert, auch in den Bildern.
 
-Mit KI-Unterstützung umgesetzt. Architektur, Review und Betrieb von mir.
+Den Nachbau habe ich mit KI-Unterstützung umgesetzt. Architektur, Review und Betrieb kommen von mir.
 
 ## Architektur
 
