@@ -1,14 +1,14 @@
 # Ticketsystem-Migration mit lokaler KI-Wissensbasis (RAG)
 
-Ein Support-Team hat sein Ticket- und Livechat-System LiveZilla bei einem Cloud-Anbieter betrieben. Ziel war, es auf einen eigenen Server im Firmennetz zu holen. Dazu kommt ein lokales Sprachmodell über Ollama und Open WebUI, das mit Qdrant auf Support-Dokumente zugreifen kann (RAG). Die Daten bleiben damit im eigenen Netz.
+Ein Support-Team hat LiveZilla, das Ticket- und Livechat-System, bei einem Cloud-Anbieter betrieben. Ziel war, es auf einen eigenen Server im Firmennetz zu holen. Dazu kommt ein lokales Sprachmodell über Ollama und Open WebUI. Es kann mit Qdrant auf Support-Dokumente zugreifen (RAG). Die Daten bleiben im eigenen Netz.
 
 ## Herkunft
 
-Die Migration war mein IHK-Abschlussprojekt als Fachinformatiker für Systemintegration. Umgesetzt habe ich sie in meinem Praktikum von September 2025 bis Ende März 2026. Dabei habe ich LiveZilla auf dem lokalen Server installiert und die Daten aus der Cloud migriert. Einiges war vom Betrieb vorgegeben.
+Die Migration war mein IHK-Abschlussprojekt als Fachinformatiker für Systemintegration. Umgesetzt habe ich sie im Praktikum von September 2025 bis Ende März 2026. LiveZilla habe ich auf dem lokalen Server installiert und die Daten aus der Cloud migriert. Einiges war vom Betrieb vorgegeben.
 
-Dieses Repo ist ein späterer Nachbau anhand meiner IHK-Projektdokumentation. Firmenname, Zugangsdaten und interne Daten sind entfernt oder anonymisiert, auch in den Bildern.
+Im Praktikum umgesetzt, hier als anonymisierte Rekonstruktion. Grundlage ist meine IHK-Projektdokumentation. Der Nachbau ist später entstanden. Firmenname, Zugangsdaten und interne Daten sind entfernt oder anonymisiert, auch in den Bildern.
 
-Den Nachbau habe ich mit KI-Unterstützung umgesetzt. Architektur, Review und Betrieb kommen von mir.
+Mit KI-Unterstützung umgesetzt. Architektur, Review und Betrieb von mir.
 
 ## Architektur
 
@@ -23,7 +23,7 @@ Alle Dienste laufen mit Docker Compose in einem gemeinsamen Bridge-Netzwerk (`we
 | `ollama` | `ollama/ollama:0.40.16` | Laufzeit für das lokale LLM | keiner |
 | `qdrant` | `qdrant/qdrant:v1.20.0` | Vektordatenbank für die Dokumente | `127.0.0.1:6333` (nur lokal) |
 
-Die Image-Versionen sind gepinnt. Eine neuere Version trägt man als Tag in `docker/docker-compose.yml` oder `docker/Dockerfile-livezilla` ein und startet im Ordner `docker/` danach mit `docker compose up -d --build` neu.
+Die Image-Versionen sind gepinnt. Für eine neuere Version den Tag in `docker/docker-compose.yml` oder `docker/Dockerfile-livezilla` eintragen und im Ordner `docker/` mit `docker compose up -d --build` neu starten.
 
 Wer mit wem spricht:
 
@@ -31,7 +31,7 @@ Wer mit wem spricht:
 - `livezilla` speichert seine Daten in `mysql`.
 - `openwebui` nutzt `ollama` über `http://ollama:11434` und `qdrant` über `http://qdrant:6333`.
 
-Von außen erreichbar ist nur nginx auf Port 80 und 443. Qdrant ist zusätzlich an `127.0.0.1:6333` gebunden, damit man auf dem Server selbst darauf zugreifen kann. Alle anderen Dienste haben keine Portfreigabe und sind nur im Docker-Netzwerk erreichbar.
+Von außen erreichbar ist nur nginx auf Port 80 und 443. Qdrant ist zusätzlich an `127.0.0.1:6333` gebunden, damit man auf dem Server selbst darauf zugreifen kann. Alle anderen Dienste haben keine Portfreigabe. Sie sind nur im Docker-Netzwerk erreichbar.
 
 ```mermaid
 flowchart LR
@@ -48,7 +48,7 @@ flowchart LR
 
 Persistente Volumes: `livezilla_data`, `mysql_data`, `openwebui_data`, `ollama_models`, `qdrant_data`.
 
-Diagramme aus dem Praktikum (anonymisiert). Sie zeigen den Stand von damals: Netzwerk `projekt_default`, 4 Volumes, Open WebUI mit `:latest` und Qdrant auf Port 6333 offen. Die compose in diesem Repo weicht davon ab, siehe Tabelle oben.
+Die Diagramme sind aus dem Praktikum und anonymisiert. Sie zeigen den Stand von damals: Netzwerk `projekt_default`, 4 Volumes, Open WebUI mit `:latest` und Qdrant auf Port 6333 offen. Die compose in diesem Repo weicht davon ab, siehe Tabelle oben.
 
 ![Docker-Architektur](diagrams/docker-architektur.png)
 ![Netzwerk-Topologie](diagrams/netzwerk-topologie.png)
@@ -56,7 +56,7 @@ Diagramme aus dem Praktikum (anonymisiert). Sie zeigen den Stand von damals: Net
 
 ## RAG mit Open WebUI
 
-Open WebUI ist über `VECTOR_DB=qdrant` so eingestellt, dass hochgeladene Dokumente in Qdrant landen. Bei einer Frage sucht Open WebUI passende Textstellen und gibt sie zusammen mit der Frage an das Modell in Ollama. Ein Embedding-Modell ist in der compose nicht festgelegt, Open WebUI nutzt dann seinen Standard.
+Open WebUI steht auf `VECTOR_DB=qdrant`. Hochgeladene Dokumente landen in Qdrant. Bei einer Frage sucht Open WebUI passende Textstellen und gibt sie mit der Frage an das Modell in Ollama. Ein Embedding-Modell ist in der compose nicht festgelegt. Open WebUI nutzt dann seinen Standard.
 
 ## Setup
 
@@ -68,7 +68,7 @@ cd ticketsystem-docker-migration-rag-KI-integration/docker
 cp .env.example .env
 ```
 
-In `docker/.env` die beiden Passwörter `DB_ROOT_PASSWORD` und `DB_USER_PASSWORD` setzen. Die `.env` steht in der `.gitignore` und wird nicht committet.
+In `docker/.env` die beiden Passwörter `DB_ROOT_PASSWORD` und `DB_USER_PASSWORD` setzen. Die `.env` steht in der `.gitignore`. Sie wird nicht committet.
 
 Nginx braucht noch eine Konfiguration und ein Zertifikat. Weiterhin im Ordner `docker/`:
 
@@ -82,9 +82,9 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -addext "subjectAltName=DNS:chat.example.local,DNS:support.example.local"
 ```
 
-Anfragen auf Port 80 leitet die Vorlage auf HTTPS um. `chat.example.local` geht an Open WebUI (Port 8080 im Container), `support.example.local` an LiveZilla (Port 80 im Container). `cert.pem` und `key.pem` liegen im Container unter `/etc/nginx/ssl`, weil Compose den Ordner `./nginx/ssl` dorthin mountet.
+Die Vorlage leitet Anfragen auf Port 80 auf HTTPS um. `chat.example.local` geht an Open WebUI, Port 8080 im Container. `support.example.local` geht an LiveZilla, Port 80 im Container. `cert.pem` und `key.pem` liegen im Container unter `/etc/nginx/ssl`. Compose mountet den Ordner `./nginx/ssl` dorthin.
 
-Das Zertifikat ist selbst signiert und nur für einen Test oder das LAN gedacht. Der Browser warnt dabei. `default.conf` und `docker/nginx/ssl/` stehen in der `.gitignore`. Die beiden Namen müssen vom Rechner aus auflösbar sein, zum Beispiel über die hosts-Datei.
+Das Zertifikat ist selbst signiert. Es ist nur für einen Test oder das LAN gedacht. Der Browser warnt dabei. `default.conf` und `docker/nginx/ssl/` stehen in der `.gitignore`. Die beiden Namen müssen vom Rechner aus auflösbar sein, zum Beispiel über die hosts-Datei.
 
 Dann alles bauen und starten, weiterhin im Ordner `docker/`:
 
@@ -113,21 +113,21 @@ Im LiveZilla-Installer als Datenbank eintragen: Host `mysql`, Datenbank `livezil
 
 ## Was fehlt und Grenzen
 
-- `docker/nginx/conf.d/default.conf` und die Zertifikate unter `docker/nginx/ssl/` legt man lokal an, siehe Setup. Beides steht in der `.gitignore`. Ohne die kopierte `default.conf` lädt nginx daraus keinen Server-Block. Fehlen `cert.pem` oder `key.pem`, bricht der Start ab.
-- Der LiveZilla-Quellcode ist nicht enthalten. LiveZilla ist kommerziell und wird seit 2020 nicht mehr weiterentwickelt. Man braucht eine eigene Kopie mit Lizenz.
-- LiveZilla braucht PHP 7.4. Diese Version bekommt seit Ende 2022 keine Sicherheitsupdates mehr. Der Container sollte deshalb nicht direkt aus dem Internet erreichbar sein, und langfristig gehört ein Ersatz für LiveZilla auf die Liste.
+- `docker/nginx/conf.d/default.conf` und die Zertifikate unter `docker/nginx/ssl/` lege ich lokal an, siehe Setup. Beides steht in der `.gitignore`. Ohne die kopierte `default.conf` lädt nginx daraus keinen Server-Block. Fehlen `cert.pem` oder `key.pem`, bricht der Start ab.
+- Der LiveZilla-Quellcode ist nicht enthalten. LiveZilla ist kommerziell und wird seit 2020 nicht mehr weiterentwickelt. Dafür brauche ich eine eigene Kopie mit Lizenz.
+- LiveZilla braucht PHP 7.4. Diese Version bekommt seit Ende 2022 keine Sicherheitsupdates mehr. Der Container sollte deshalb nicht direkt aus dem Internet erreichbar sein. Langfristig gehört ein Ersatz für LiveZilla auf die Liste.
 - Für Ollama ist keine GPU eingebunden. Das Modell läuft auf der CPU.
 - Firewall (UFW), SSH-Härtung und das Backup-Skript mit Cron liefen im Praktikum auf dem Server. Sie sind nicht Teil dieses Repos.
 
 ## Ergebnisse im Praktikum
 
-Gemessene Zahlen habe ich dazu nicht, deshalb beschreibe ich die Ergebnisse nur grob.
+Gemessene Zahlen habe ich dazu nicht. Die Ergebnisse beschreibe ich nur grob.
 
 | Kriterium | Ergebnis |
 |---|---|
 | Datenmigration | Die Daten aus der Cloud liegen auf dem lokalen Server. Eine Prüfung Tabelle für Tabelle habe ich nicht dokumentiert. |
-| Bearbeitungszeit pro Ticket | Antworten auf Standardfragen gehen spürbar schneller, gemessen habe ich das nicht. |
-| Backup | täglich per Cron eingerichtet, einen Restore-Test habe ich nicht dokumentiert |
+| Bearbeitungszeit pro Ticket | Antworten auf Standardfragen gehen spürbar schneller. Gemessen habe ich das nicht. |
+| Backup | täglich per Cron eingerichtet. Einen Restore-Test habe ich nicht dokumentiert. |
 | Tests | Wie viele Tests durchliefen, habe ich nicht aufgeschrieben. |
 
 ## Screenshots aus dem Praktikum
@@ -141,7 +141,7 @@ Die Screenshots sind geschwärzt (Hostname, Benutzer, IP, Passwort, Browser-Tabs
 
 ## Was ich dabei gelernt habe
 
-Am schwierigsten waren Probleme mit der Datenbank. Der LiveZilla-Installer hatte schon eigene Tabellen angelegt. Beim Einspielen des MySQL-Dumps aus der Cloud gab es deshalb Konflikte durch doppelte Einträge. Ich habe den Import dann mit `--force` laufen lassen, damit er bei diesen Fehlern nicht abbricht.
+Am schwierigsten waren die Probleme mit der Datenbank. Der LiveZilla-Installer hatte schon eigene Tabellen angelegt. Beim Einspielen des MySQL-Dumps aus der Cloud gab es deshalb Konflikte durch doppelte Einträge. Ich habe den Import mit `--force` laufen lassen, damit er bei diesen Fehlern nicht abbricht.
 
 ## Repo-Struktur
 
@@ -154,4 +154,4 @@ Am schwierigsten waren Probleme mit der Datenbank. Der LiveZilla-Installer hatte
 
 ## Lizenz
 
-Das Repo steht unter der MIT-Lizenz, siehe [LICENSE](LICENSE).
+Das Repo steht unter der MIT-Lizenz. Der Text steht in [LICENSE](LICENSE).
